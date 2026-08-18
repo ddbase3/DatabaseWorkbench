@@ -5,6 +5,7 @@
 		'endpoint' => $this->_['endpoint'],
 		'csrf' => $this->_['csrf'],
 		'pageSize' => $this->_['page_size'],
+		'strings' => is_array($this->_['translations'] ?? null) ? $this->_['translations'] : [],
 	];
 	$cssUrl = ($this->_['resolve'])('plugin/DatabaseWorkbench/assets/databaseworkbench/databaseworkbench.css');
 	$jsUrl = ($this->_['resolve'])('plugin/DatabaseWorkbench/assets/databaseworkbench/databaseworkbench.js');
@@ -42,7 +43,7 @@
 
 	window.__databaseWorkbenchLoader.then(mount).catch(function() {
 		var target = document.getElementById(config.containerId);
-		if (target) target.textContent = 'Unable to load DatabaseWorkbench assets.';
+		if (target) target.textContent = <?php echo json_encode((string)(($this->_['translations']['asset_load_failed'] ?? '') ?: 'Unable to load DatabaseWorkbench assets.'), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE); ?>;
 	});
 })();
 </script>

@@ -29,21 +29,29 @@ final class DatabaseWorkbenchDisplay implements IDisplay {
 	}
 
 	public function getOutput(string $out = 'html', bool $final = false): string {
+		$this->view->setPath(DIR_PLUGIN . 'DatabaseWorkbench');
+		$this->view->loadBricks('Display');
+		$translations = $this->view->getBricks('databaseworkbench_display');
+		$translations = is_array($translations) ? $translations : [];
+
 		try {
 			$token = $this->csrf->issueToken();
 		}
-		catch (Throwable $e) {
+		catch (Throwable) {
+			$message = trim((string)($translations['session_required'] ?? ''));
+			$message = $message !== '' ? $message : 'DatabaseWorkbench requires an active session.';
+
 			return '<div class="databaseworkbench-error">'
-				. htmlspecialchars($e->getMessage(), ENT_QUOTES, 'UTF-8')
+				. htmlspecialchars($message, ENT_QUOTES, 'UTF-8')
 				. '</div>';
 		}
 
+		$title = trim((string)($translations['title'] ?? ''));
 		$config = array_merge([
-			'title' => 'Database Workbench',
+			'title' => $title !== '' ? $title : 'Database Workbench',
 			'page_size' => 50,
 		], $this->data);
 
-		$this->view->setPath(DIR_PLUGIN . 'DatabaseWorkbench');
 		$this->view->setTemplate('Display/DatabaseWorkbenchDisplay.php');
 		$this->view->assign('title', (string) $config['title']);
 		$this->view->assign('page_size', max(1, min(200, (int) $config['page_size'])));
@@ -52,6 +60,7 @@ final class DatabaseWorkbenchDisplay implements IDisplay {
 			'out' => 'json',
 		]));
 		$this->view->assign('csrf', $token);
+		$this->view->assign('translations', $translations);
 		$this->view->assign('resolve', fn(string $path): string => $this->assetResolver->resolve($path));
 
 		return $this->view->loadTemplate();

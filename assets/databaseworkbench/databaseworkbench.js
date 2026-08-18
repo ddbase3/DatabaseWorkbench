@@ -1,6 +1,34 @@
 (function(global) {
 	'use strict';
 
+	function translate(config, key, fallback, replacements) {
+		var value = String(config && config.strings && config.strings[key] != null ? config.strings[key] : '').trim();
+		if (value === '') value = fallback;
+		Object.keys(replacements || {}).forEach(function(name) {
+			value = value.split('{' + name + '}').join(String(replacements[name]));
+		});
+		return value;
+	}
+
+	function localizeError(config, message) {
+		var raw = String(message || '').trim();
+
+		if (raw === 'No insertable values were provided.') return translate(config, 'error_no_insert_values', 'No insertable values were provided.');
+		if (raw === 'No update values were provided.') return translate(config, 'error_no_update_values', 'No update values were provided.');
+		if (raw === 'SQL must not be empty.') return translate(config, 'error_sql_empty', 'SQL must not be empty.');
+		if (raw === 'The configured database connection is not available.') return translate(config, 'error_connection_unavailable', 'The configured database connection is not available.');
+		if (raw === 'Table name is required.') return translate(config, 'error_table_required', 'Table name is required.');
+		if (raw === 'This operation requires a primary key.') return translate(config, 'error_primary_key_required', 'This operation requires a primary key.');
+		if (raw === 'Unable to read the CREATE TABLE statement.') return translate(config, 'error_create_table_read', 'Unable to read the CREATE TABLE statement.');
+		if (raw === 'The request token is invalid or the session has expired.') return translate(config, 'error_request_token', 'The request token is invalid or the session has expired.');
+		if (raw.indexOf('Unknown table: ') === 0) return translate(config, 'error_unknown_table', 'Unknown table: {table}', {table: raw.substring(15)});
+		if (raw.indexOf('Missing primary key value: ') === 0) return translate(config, 'error_primary_key_value', 'Missing primary key value: {column}', {column: raw.substring(27)});
+		if (raw.indexOf('Unknown DatabaseWorkbench action: ') === 0) return translate(config, 'error_unknown_action', 'Unknown DatabaseWorkbench action.');
+		if (raw.indexOf('Database error ') === 0) return translate(config, 'error_database', 'The database operation failed.');
+
+		return translate(config, 'request_failed', 'DatabaseWorkbench request failed.');
+	}
+
 	function element(tag, className, text) {
 		var node = document.createElement(tag);
 		if (className) node.className = className;
@@ -56,8 +84,8 @@
 		this.root.replaceChildren();
 
 		var header = element('div', 'databaseworkbench-header');
-		var title = element('div', 'databaseworkbench-title', this.root.dataset.title || 'Database Workbench');
-		var status = element('div', 'databaseworkbench-status', 'Ready');
+		var title = element('div', 'databaseworkbench-title', this.root.dataset.title || translate(this.config, 'title', 'Database Workbench'));
+		var status = element('div', 'databaseworkbench-status', translate(this.config, 'ready', 'Ready'));
 		this.status = status;
 		header.append(title, status);
 
@@ -65,14 +93,14 @@
 		var sidebar = element('aside', 'databaseworkbench-sidebar');
 		var sidebarHead = element('div', 'databaseworkbench-sidebar-head');
 		sidebarHead.append(
-			element('strong', '', 'Tables'),
-			button('Reload', 'databaseworkbench-button databaseworkbench-button-small', function() {
+			element('strong', '', translate(this.config, 'tables', 'Tables')),
+			button(translate(this.config, 'reload', 'Reload'), 'databaseworkbench-button databaseworkbench-button-small', function() {
 				self.loadTables();
 			})
 		);
 		var filter = element('input', 'databaseworkbench-filter');
 		filter.type = 'search';
-		filter.placeholder = 'Filter tables';
+		filter.placeholder = translate(this.config, 'filter_tables', 'Filter tables');
 		filter.addEventListener('input', function() {
 			self.renderTableList(filter.value);
 		});
@@ -88,9 +116,9 @@
 		this.root.append(header, layout);
 
 		this.setTabs([
-			{ id: 'overview', label: 'Overview', action: this.loadOverview.bind(this) },
-			{ id: 'browse', label: 'Browse', action: this.loadBrowse.bind(this) },
-			{ id: 'structure', label: 'Structure', action: this.loadStructure.bind(this) },
+			{ id: 'overview', label: translate(this.config, 'overview', 'Overview'), action: this.loadOverview.bind(this) },
+			{ id: 'browse', label: translate(this.config, 'browse', 'Browse'), action: this.loadBrowse.bind(this) },
+			{ id: 'structure', label: translate(this.config, 'structure', 'Structure'), action: this.loadStructure.bind(this) },
 			{ id: 'sql', label: 'SQL', action: this.renderSql.bind(this) }
 		], 'overview');
 	};
@@ -123,7 +151,7 @@
 	};
 
 	DatabaseWorkbenchApp.prototype.request = async function(action, payload) {
-		this.setStatus('Loading…', 'loading');
+		this.setStatus(translate(this.config, 'loading', 'Loading…'), 'loading');
 		var response;
 		try {
 			response = await fetch(this.config.endpoint, {
@@ -137,12 +165,13 @@
 			});
 			var result = await response.json();
 			if (!result.ok) throw new Error(result.error || 'DatabaseWorkbench request failed.');
-			this.setStatus('Ready', 'ok');
+			this.setStatus(translate(this.config, 'ready', 'Ready'), 'ok');
 			return result.data;
 		}
 		catch (error) {
-			this.setStatus(error.message || String(error), 'error');
-			throw error;
+			var message = localizeError(this.config, error.message || String(error));
+			this.setStatus(message, 'error');
+			throw new Error(message);
 		}
 	};
 
@@ -182,7 +211,7 @@
 
 	DatabaseWorkbenchApp.prototype.requireSelectedTable = function() {
 		if (this.state.selectedTable) return true;
-		this.renderNotice('Select a table first.');
+		this.renderNotice(translate(this.config, 'select_table_first', 'Select a table first.'));
 		return false;
 	};
 
@@ -195,11 +224,11 @@
 		this.content.replaceChildren();
 		var cards = element('div', 'databaseworkbench-cards');
 		[
-			['Database', data.database || '—'],
-			['Server', data.version || '—'],
-			['Tables', data.tables || 0],
-			['Charset', data.charset || '—'],
-			['Collation', data.collation || '—']
+			[translate(this.config, 'database', 'Database'), data.database || '—'],
+			[translate(this.config, 'server', 'Server'), data.version || '—'],
+			[translate(this.config, 'tables', 'Tables'), data.tables || 0],
+			[translate(this.config, 'charset', 'Charset'), data.charset || '—'],
+			[translate(this.config, 'collation', 'Collation'), data.collation || '—']
 		].forEach(function(item) {
 			var card = element('div', 'databaseworkbench-card');
 			card.append(element('span', 'databaseworkbench-card-label', item[0]), element('strong', '', item[1]));
@@ -207,7 +236,7 @@
 		});
 
 		var table = this.createDataTable(
-			['Table', 'Engine', 'Rows', 'Data', 'Indexes', 'Collation'],
+			[translate(this.config, 'table', 'Table'), translate(this.config, 'engine', 'Engine'), translate(this.config, 'rows', 'Rows'), translate(this.config, 'data', 'Data'), translate(this.config, 'indexes', 'Indexes'), translate(this.config, 'collation', 'Collation')],
 			this.state.tables.map(function(item) {
 				return [item.name, item.engine, item.rows, formatBytes(item.data_length), formatBytes(item.index_length), item.collation];
 			})
@@ -234,22 +263,22 @@
 		var self = this;
 		this.content.replaceChildren();
 		var toolbar = element('div', 'databaseworkbench-toolbar');
-		var summary = element('span', 'databaseworkbench-toolbar-summary', data.table + ' · ' + data.total + ' rows');
+		var summary = element('span', 'databaseworkbench-toolbar-summary', translate(this.config, 'table_rows', '{table} · {count} rows', {table: data.table, count: data.total}));
 		toolbar.append(
 			summary,
-			button('Insert row', 'databaseworkbench-button', function() {
+			button(translate(this.config, 'insert_row', 'Insert row'), 'databaseworkbench-button', function() {
 				self.openRowEditor('insert', {}, {});
 			}),
-			button('Export SQL', 'databaseworkbench-button', this.exportSelectedTable.bind(this)),
-			button('Truncate', 'databaseworkbench-button databaseworkbench-button-danger', this.truncateSelectedTable.bind(this)),
-			button('Drop', 'databaseworkbench-button databaseworkbench-button-danger', this.dropSelectedTable.bind(this))
+			button(translate(this.config, 'export_sql', 'Export SQL'), 'databaseworkbench-button', this.exportSelectedTable.bind(this)),
+			button(translate(this.config, 'truncate', 'Truncate'), 'databaseworkbench-button databaseworkbench-button-danger', this.truncateSelectedTable.bind(this)),
+			button(translate(this.config, 'drop', 'Drop'), 'databaseworkbench-button databaseworkbench-button-danger', this.dropSelectedTable.bind(this))
 		);
 
 		var wrap = element('div', 'databaseworkbench-grid-wrap');
 		var table = element('table', 'databaseworkbench-grid');
 		var head = element('thead');
 		var headRow = element('tr');
-		headRow.appendChild(element('th', 'databaseworkbench-actions-column', 'Actions'));
+		headRow.appendChild(element('th', 'databaseworkbench-actions-column', translate(this.config, 'actions', 'Actions')));
 		data.columns.forEach(function(column) {
 			var name = column.Field;
 			var th = element('th', 'databaseworkbench-sortable', name + (data.order_by === name ? (data.order_direction === 'desc' ? ' ↓' : ' ↑') : ''));
@@ -275,16 +304,16 @@
 			var actions = element('td', 'databaseworkbench-row-actions');
 			if ((data.primary_key || []).length > 0) {
 				actions.append(
-					button('Edit', 'databaseworkbench-button databaseworkbench-button-small', function() {
+					button(translate(self.config, 'edit', 'Edit'), 'databaseworkbench-button databaseworkbench-button-small', function() {
 						self.openRowEditor('update', row.values, row.key);
 					}),
-					button('Delete', 'databaseworkbench-button databaseworkbench-button-small databaseworkbench-button-danger', function() {
+					button(translate(self.config, 'delete', 'Delete'), 'databaseworkbench-button databaseworkbench-button-small databaseworkbench-button-danger', function() {
 						self.deleteRow(row.key);
 					})
 				);
 			}
 			else {
-				actions.appendChild(element('span', 'databaseworkbench-muted', 'No primary key'));
+				actions.appendChild(element('span', 'databaseworkbench-muted', translate(self.config, 'no_primary_key', 'No primary key')));
 			}
 			tr.appendChild(actions);
 			data.columns.forEach(function(column) {
@@ -299,21 +328,21 @@
 		wrap.appendChild(table);
 
 		var pager = element('div', 'databaseworkbench-pager');
-		var previous = button('Previous', 'databaseworkbench-button databaseworkbench-button-small', function() {
+		var previous = button(translate(this.config, 'previous', 'Previous'), 'databaseworkbench-button databaseworkbench-button-small', function() {
 			if (self.state.page > 1) {
 				self.state.page -= 1;
 				self.loadBrowse();
 			}
 		});
 		previous.disabled = data.page <= 1;
-		var next = button('Next', 'databaseworkbench-button databaseworkbench-button-small', function() {
+		var next = button(translate(this.config, 'next', 'Next'), 'databaseworkbench-button databaseworkbench-button-small', function() {
 			if (self.state.page < data.total_pages) {
 				self.state.page += 1;
 				self.loadBrowse();
 			}
 		});
 		next.disabled = data.page >= data.total_pages;
-		pager.append(previous, element('span', '', 'Page ' + data.page + ' of ' + data.total_pages), next);
+		pager.append(previous, element('span', '', translate(this.config, 'page_status', 'Page {page} of {totalPages}', {page: data.page, totalPages: data.total_pages})), next);
 		this.content.append(toolbar, wrap, pager);
 	};
 
@@ -326,9 +355,9 @@
 
 	DatabaseWorkbenchApp.prototype.renderStructure = function(data) {
 		this.content.replaceChildren();
-		this.content.appendChild(element('h3', '', 'Columns'));
+		this.content.appendChild(element('h3', '', translate(this.config, 'columns', 'Columns')));
 		this.content.appendChild(this.createObjectTable(data.columns));
-		this.content.appendChild(element('h3', '', 'Indexes'));
+		this.content.appendChild(element('h3', '', translate(this.config, 'indexes', 'Indexes')));
 		this.content.appendChild(this.createObjectTable(data.indexes));
 		this.content.appendChild(element('h3', '', 'CREATE TABLE'));
 		var pre = element('pre', 'databaseworkbench-sql-output', data.create_sql);
@@ -341,7 +370,7 @@
 		var editor = element('textarea', 'databaseworkbench-sql-editor');
 		editor.spellcheck = false;
 		editor.value = this.state.selectedTable ? 'SELECT * FROM `' + this.state.selectedTable.replace(/`/g, '``') + '` LIMIT 100;' : 'SHOW TABLES;';
-		var run = button('Run SQL', 'databaseworkbench-button databaseworkbench-button-primary', async function() {
+		var run = button(translate(this.config, 'run_sql', 'Run SQL'), 'databaseworkbench-button databaseworkbench-button-primary', async function() {
 			try {
 				var data = await self.request('sql', { sql: editor.value });
 				self.renderSqlResult(editor, data);
@@ -350,7 +379,7 @@
 				self.renderSqlResult(editor, { error: error.message || String(error) });
 			}
 		});
-		var notice = element('p', 'databaseworkbench-warning', 'SQL is executed with the permissions of the configured database connection.');
+		var notice = element('p', 'databaseworkbench-warning', translate(this.config, 'sql_warning', 'SQL is executed with the permissions of the configured database connection.'));
 		this.content.append(editor, run, notice, element('div', 'databaseworkbench-sql-result'));
 	};
 
@@ -362,11 +391,11 @@
 			return;
 		}
 		if (data.type === 'rows') {
-			result.appendChild(element('p', 'databaseworkbench-muted', data.row_count + ' rows' + (data.truncated ? ' (truncated)' : '')));
+			result.appendChild(element('p', 'databaseworkbench-muted', translate(this.config, 'sql_rows', '{count} rows{suffix}', {count: data.row_count, suffix: data.truncated ? translate(this.config, 'truncated_suffix', ' (truncated)') : ''})));
 			result.appendChild(this.createObjectTable(data.rows));
 			return;
 		}
-		result.appendChild(element('p', '', 'Affected rows: ' + data.affected_rows + (data.insert_id ? ' · Insert ID: ' + data.insert_id : '')));
+		result.appendChild(element('p', '', translate(this.config, 'affected_rows', 'Affected rows: {count}', {count: data.affected_rows}) + (data.insert_id ? ' · ' + translate(this.config, 'insert_id', 'Insert ID: {id}', {id: data.insert_id}) : '')));
 	};
 
 	DatabaseWorkbenchApp.prototype.openRowEditor = function(mode, values, key) {
@@ -375,7 +404,7 @@
 		if (!browse) return;
 		var overlay = element('div', 'databaseworkbench-modal-overlay');
 		var modal = element('div', 'databaseworkbench-modal');
-		var title = element('h3', '', mode === 'insert' ? 'Insert row' : 'Edit row');
+		var title = element('h3', '', mode === 'insert' ? translate(this.config, 'insert_row', 'Insert row') : translate(this.config, 'edit_row', 'Edit row'));
 		var form = element('form', 'databaseworkbench-form');
 		var fields = {};
 		var nullInputs = {};
@@ -389,7 +418,7 @@
 			input.rows = 2;
 			input.value = values[name] === null || values[name] === undefined ? '' : displayValue(values[name]);
 			if (mode === 'insert' && String(column.Extra || '').includes('auto_increment')) {
-				input.placeholder = 'auto increment';
+				input.placeholder = translate(self.config, 'auto_increment', 'auto increment');
 			}
 			var nullLabel = element('label', 'databaseworkbench-null-toggle');
 			var nullInput = document.createElement('input');
@@ -405,8 +434,8 @@
 
 		var actions = element('div', 'databaseworkbench-modal-actions');
 		actions.append(
-			button('Cancel', 'databaseworkbench-button', function() { overlay.remove(); }),
-			button(mode === 'insert' ? 'Insert' : 'Save', 'databaseworkbench-button databaseworkbench-button-primary', async function() {
+			button(translate(this.config, 'cancel', 'Cancel'), 'databaseworkbench-button', function() { overlay.remove(); }),
+			button(mode === 'insert' ? translate(this.config, 'insert', 'Insert') : translate(this.config, 'save', 'Save'), 'databaseworkbench-button databaseworkbench-button-primary', async function() {
 				var payloadValues = {};
 				var nullColumns = [];
 				Object.keys(fields).forEach(function(name) {
@@ -429,13 +458,13 @@
 	};
 
 	DatabaseWorkbenchApp.prototype.deleteRow = async function(key) {
-		if (!global.confirm('Delete this row permanently?')) return;
+		if (!global.confirm(translate(this.config, 'confirm_delete_row', 'Delete this row permanently?'))) return;
 		await this.request('delete', { table: this.state.selectedTable, key: key });
 		this.loadBrowse();
 	};
 
 	DatabaseWorkbenchApp.prototype.truncateSelectedTable = async function() {
-		if (!global.confirm('Delete all rows from ' + this.state.selectedTable + '?')) return;
+		if (!global.confirm(translate(this.config, 'confirm_truncate', 'Delete all rows from {table}?', {table: this.state.selectedTable}))) return;
 		await this.request('truncate', { table: this.state.selectedTable });
 		this.state.page = 1;
 		this.loadBrowse();
@@ -443,7 +472,7 @@
 	};
 
 	DatabaseWorkbenchApp.prototype.dropSelectedTable = async function() {
-		if (!global.confirm('Drop table ' + this.state.selectedTable + ' permanently?')) return;
+		if (!global.confirm(translate(this.config, 'confirm_drop', 'Drop table {table} permanently?', {table: this.state.selectedTable}))) return;
 		await this.request('drop', { table: this.state.selectedTable });
 		this.state.selectedTable = '';
 		await this.loadTables();
@@ -484,7 +513,7 @@
 	};
 
 	DatabaseWorkbenchApp.prototype.createObjectTable = function(rows) {
-		if (!rows || rows.length === 0) return element('div', 'databaseworkbench-notice', 'No data.');
+		if (!rows || rows.length === 0) return element('div', 'databaseworkbench-notice', translate(this.config, 'no_data', 'No data.'));
 		var headers = [];
 		rows.forEach(function(row) {
 			Object.keys(row).forEach(function(key) {
