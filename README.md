@@ -73,3 +73,8 @@ Use a dedicated database account with only the privileges that administrators ac
 Row updates and deletes require a primary key. Tables without a primary key remain browseable, but per-row edit and delete controls are disabled.
 
 The export function is capped at 5000 rows to keep an embedded AJAX display bounded. Large production exports should use a dedicated backup or export workflow.
+
+## Documentation
+
+- [Frequently Asked Questions](docs/faq.md)
+- [Privacy and data processing](PRIVACY.md)
