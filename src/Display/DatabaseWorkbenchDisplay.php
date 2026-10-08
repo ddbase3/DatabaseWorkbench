@@ -29,7 +29,7 @@ final class DatabaseWorkbenchDisplay implements IDisplay {
 	}
 
 	public function getOutput(string $out = 'html', bool $final = false): string {
-		$this->view->setPath(DIR_PLUGIN . 'DatabaseWorkbench');
+		$this->view->setPath(dirname(__DIR__, 2));
 		$this->view->loadBricks('Display');
 		$translations = $this->view->getBricks('databaseworkbench_display');
 		$translations = is_array($translations) ? $translations : [];
