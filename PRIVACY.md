@@ -133,7 +133,7 @@ Database values are rendered into DOM elements through text content rather than 
 
 ## 6. Session and CSRF data
 
-The default `SessionDatabaseWorkbenchCsrf` implementation requires an active PHP session.
+The default `SessionDatabaseWorkbenchCsrf` implementation uses BASE3 `ISession`; it starts the configured session implementation when needed.
 
 It stores one CSRF value in the session under:
 
@@ -147,13 +147,13 @@ The display embeds this token in its client side runtime configuration. Every JS
 
 The token is a security value and should be protected like other session-bound anti-CSRF material.
 
-DatabaseWorkbench does not define the PHP session identifier cookie, session storage backend, session lifetime, or session invalidation policy. Those are responsibilities of the surrounding runtime.
+DatabaseWorkbench does not define session cookies, session storage, session lifetime, or invalidation policy. Those are responsibilities of the active `ISession` implementation and host runtime.
 
 ## 7. Authentication and authorization
 
-The current DatabaseWorkbench implementation does not contain a user identity check, role check, or permission check.
+The display and API require a current BASE3 user from `IUsermanager::getUser()` with a nonempty, nonzero technical ID. There is no role check or permission check.
 
-This is a critical deployment property. Anyone who can reach both the display and the API and can satisfy the session and CSRF boundary can request the supported operations. CSRF protection prevents a different class of attack and is not authorization.
+This is a critical deployment property. Any user who passes the minimal identity check and the CSRF boundary can request all supported operations. CSRF protection prevents a different class of attack and is not authorization.
 
 The surrounding application or infrastructure must restrict access to trusted database administrators or another explicitly authorized group.
 
@@ -294,7 +294,7 @@ This does not control screenshots, copied data, browser developer tools, downloa
 
 DatabaseWorkbench has no component-owned database tables, migrations, state store entries, settings store datasets, file repository, or persistent server-side export directory.
 
-Its only component-specific server-side state in the default implementation is the CSRF token stored in the active PHP session.
+Its only component-specific server-side state in the default implementation is the CSRF token stored through the configured BASE3 `ISession` implementation.
 
 The component directly changes the connected database when an administrator requests a mutation. Those database changes are domain data changes, not private DatabaseWorkbench persistence.
 
@@ -309,7 +309,7 @@ It also defines no automatic retention or deletion process for:
 - HTTP access logs
 - infrastructure logs
 - downloaded SQL exports
-- PHP sessions
+- BASE3 sessions
 
 The relevant system owners must define those policies.
 
@@ -338,7 +338,7 @@ A production installation should, at minimum:
 - use a least-privilege database account
 - avoid exposing the endpoint directly to the public internet unless the surrounding security model explicitly requires it
 - use encrypted transport where database or HTTP traffic crosses untrusted networks
-- configure secure PHP session handling
+- configure secure BASE3 session handling
 - decide whether privileged database actions require an audit trail
 - assess whether raw database administration is appropriate for personal or special-category data
 - define handling and deletion rules for downloaded SQL exports
@@ -357,7 +357,7 @@ For a concrete deployment, document at least the following:
 | Database host | Local, internal, managed, or externally hosted |
 | Database account | Account used and granted privileges |
 | Data categories | Personal, confidential, security relevant, or other data present in accessible tables |
-| Session backend | Where PHP sessions are stored and how long they remain valid |
+| Session backend | How `ISession` stores state and how long it remains valid |
 | HTTP transport | TLS and network boundaries |
 | Database transport | Encryption and network boundaries |
 | Web and proxy logs | Whether request metadata or bodies are recorded |

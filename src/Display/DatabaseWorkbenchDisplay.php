@@ -6,6 +6,7 @@ use Base3\Api\IAssetResolver;
 use Base3\Api\IDisplay;
 use Base3\Api\IMvcView;
 use Base3\LinkTarget\Api\ILinkTargetService;
+use Base3\Usermanager\Api\IUsermanager;
 use DatabaseWorkbench\Api\IDatabaseWorkbenchCsrf;
 use Throwable;
 
@@ -17,7 +18,8 @@ final class DatabaseWorkbenchDisplay implements IDisplay {
 		private readonly IMvcView $view,
 		private readonly IAssetResolver $assetResolver,
 		private readonly ILinkTargetService $linkTargetService,
-		private readonly IDatabaseWorkbenchCsrf $csrf
+		private readonly IDatabaseWorkbenchCsrf $csrf,
+		private readonly IUsermanager $userManager
 	) {}
 
 	public static function getName(): string {
@@ -33,6 +35,14 @@ final class DatabaseWorkbenchDisplay implements IDisplay {
 		$this->view->loadBricks('Display');
 		$translations = $this->view->getBricks('databaseworkbench_display');
 		$translations = is_array($translations) ? $translations : [];
+
+		if (!$this->isAuthenticated()) {
+			$message = trim((string)($translations['authentication_required'] ?? ''));
+			$message = $message !== '' ? $message : 'DatabaseWorkbench requires an authenticated user.';
+			return '<div class="databaseworkbench-error">'
+				. htmlspecialchars($message, ENT_QUOTES, 'UTF-8')
+				. '</div>';
+		}
 
 		try {
 			$token = $this->csrf->issueToken();
@@ -64,5 +74,13 @@ final class DatabaseWorkbenchDisplay implements IDisplay {
 		$this->view->assign('resolve', fn(string $path): string => $this->assetResolver->resolve($path));
 
 		return $this->view->loadTemplate();
+	}
+
+	private function isAuthenticated(): bool {
+		$user = $this->userManager->getUser();
+		if ($user === null) return false;
+		$userId = $user->id;
+		return (is_int($userId) && $userId > 0)
+			|| (is_string($userId) && trim($userId) !== '' && trim($userId) !== '0');
 	}
 }

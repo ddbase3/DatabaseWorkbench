@@ -132,9 +132,9 @@ This normalization concerns display and JSON responses. The SQL export is genera
 
 No.
 
-The current component intentionally contains no user or permission check. A user who can reach the display and its JSON endpoint can use the database operations made available by the plugin, subject to the privileges of the configured database account.
+The display and JSON endpoint require a current BASE3 user from `IUsermanager::getUser()` with a nonempty, nonzero technical ID. The current component intentionally has no role or permission check. Every user passing this minimal identity check can use the database operations made available by the plugin, subject to the privileges of the configured database account.
 
-Authentication and authorization must be enforced by the surrounding application, route protection, reverse proxy, network boundary, or another appropriate access control layer.
+Additional authorization must be enforced by the surrounding application, route protection, reverse proxy, network boundary, or another appropriate access control layer.
 
 ## Is CSRF protection the same as authorization?
 
@@ -144,7 +144,7 @@ A valid session and CSRF token must not be treated as a substitute for an author
 
 ## How does CSRF protection work?
 
-The default CSRF implementation stores one random token in the active PHP session under:
+The default CSRF implementation stores one random token through BASE3 `ISession` under:
 
 ```text
 databaseworkbench.csrf
@@ -156,11 +156,9 @@ The display embeds the token in its runtime configuration. Every JSON request in
 
 ## Does DatabaseWorkbench require a PHP session?
 
-The default CSRF implementation does. The session must already be active when the display is rendered.
+No. It requires a working BASE3 `ISession` implementation. The default CSRF implementation starts that session as needed. The host decides whether native PHP sessions or another storage mechanism backs the contract.
 
-If no active session exists, the display returns an error message instead of the workbench interface.
-
-A host project may replace `IDatabaseWorkbenchCsrf` if it deliberately provides a different CSRF boundary.
+A host project may still replace `IDatabaseWorkbenchCsrf` if it deliberately provides another CSRF boundary.
 
 ## How are requests sent to the API?
 
@@ -182,7 +180,7 @@ No. The supplied client script does not use Local Storage, Session Storage, Inde
 
 Current UI state, such as the selected table, page number, sort order, and loaded rows, is held in JavaScript memory for the lifetime of the page.
 
-The CSRF value is backed by the PHP session on the server side.
+The CSRF value is backed by BASE3 `ISession` on the server side.
 
 ## Does DatabaseWorkbench send data to external services?
 

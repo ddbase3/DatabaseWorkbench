@@ -24,12 +24,13 @@ databaseworkbenchapi
 - SQL console for read and write statements
 - table truncate and drop actions
 - SQL export with structure and up to 5000 rows
-- session-backed CSRF protection
+- CSRF protection through the BASE3 `ISession` contract
 
 ## Requirements
 
 - a configured `Base3\Database\Api\IDatabase` implementation for MySQL or MariaDB
-- an active PHP session before the display is rendered
+- an available `Base3\Session\Api\ISession` implementation
+- a current BASE3 user returned by `IUsermanager::getUser()` with a nonempty technical ID (no role or permission check)
 - an active `Base3\LinkTarget\Api\ILinkTargetService`
 - an active `Base3\Api\IAssetResolver`
 
@@ -64,9 +65,9 @@ $display->setData([
 
 ## Security notes
 
-This version intentionally contains no user or permission check. Anyone who can reach the display and its AJAX endpoint can execute all supported database operations with the privileges of the configured database account.
+This version requires a current user returned by `IUsermanager::getUser()` with a nonempty, nonzero technical ID at both the display and the JSON endpoint. It intentionally performs no role or permission check. Every user passing this minimal identity check can execute all supported database operations with the privileges of the configured database account.
 
-Keep the display and endpoint inaccessible to untrusted users at the surrounding application or deployment boundary until authorization is added again. The session-backed CSRF check remains active, but CSRF protection is not authorization.
+Restrict both the display and the endpoint to trusted users at the deployment boundary until authorization is added. The minimal current-user check and CSRF protection are not permission checks.
 
 Use a dedicated database account with only the privileges that administrators actually need. The SQL console can execute destructive SQL.
 

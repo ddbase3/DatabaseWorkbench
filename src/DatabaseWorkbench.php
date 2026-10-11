@@ -5,6 +5,7 @@ namespace DatabaseWorkbench;
 use Base3\Api\IContainer;
 use Base3\Api\IPlugin;
 use Base3\Database\Api\IDatabase;
+use Base3\Session\Api\ISession;
 use DatabaseWorkbench\Api\IDatabaseWorkbenchCsrf;
 use DatabaseWorkbench\Api\IDatabaseWorkbenchService;
 use DatabaseWorkbench\Security\SessionDatabaseWorkbenchCsrf;
@@ -29,7 +30,7 @@ final class DatabaseWorkbench implements IPlugin {
 			)
 			->set(
 				IDatabaseWorkbenchCsrf::class,
-				fn() => new SessionDatabaseWorkbenchCsrf(),
+				fn($c) => new SessionDatabaseWorkbenchCsrf($c->get(ISession::class)),
 				IContainer::SHARED | IContainer::NOOVERWRITE
 			)
 			->set(self::getName(), $this, IContainer::SHARED);

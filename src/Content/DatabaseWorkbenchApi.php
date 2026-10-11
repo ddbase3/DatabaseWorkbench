@@ -4,6 +4,7 @@ namespace DatabaseWorkbench\Content;
 
 use Base3\Api\IOutput;
 use Base3\Api\IRequest;
+use Base3\Usermanager\Api\IUsermanager;
 use DatabaseWorkbench\Api\IDatabaseWorkbenchCsrf;
 use DatabaseWorkbench\Api\IDatabaseWorkbenchService;
 use Throwable;
@@ -13,7 +14,8 @@ final class DatabaseWorkbenchApi implements IOutput {
 	public function __construct(
 		private readonly IRequest $request,
 		private readonly IDatabaseWorkbenchService $service,
-		private readonly IDatabaseWorkbenchCsrf $csrf
+		private readonly IDatabaseWorkbenchCsrf $csrf,
+		private readonly IUsermanager $userManager
 	) {}
 
 	public static function getName(): string {
@@ -22,6 +24,9 @@ final class DatabaseWorkbenchApi implements IOutput {
 
 	public function getOutput(string $out = 'json', bool $final = false): string {
 		try {
+			if (!$this->isAuthenticated()) {
+				throw new \RuntimeException('DatabaseWorkbench requires an authenticated user.');
+			}
 			$payload = $this->request->getJsonBody();
 			if ($payload === []) {
 				$payload = $this->request->allPost();
@@ -41,6 +46,14 @@ final class DatabaseWorkbenchApi implements IOutput {
 				'error' => $e->getMessage(),
 			]);
 		}
+	}
+
+	private function isAuthenticated(): bool {
+		$user = $this->userManager->getUser();
+		if ($user === null) return false;
+		$userId = $user->id;
+		return (is_int($userId) && $userId > 0)
+			|| (is_string($userId) && trim($userId) !== '' && trim($userId) !== '0');
 	}
 
 	private function dispatch(string $action, array $payload): array {
