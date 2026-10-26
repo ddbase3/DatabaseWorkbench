@@ -5,9 +5,13 @@ namespace DatabaseWorkbench\Display;
 use Base3\Api\IAssetResolver;
 use Base3\Api\IDisplay;
 use Base3\Api\IMvcView;
+use Base3\Authorization\Api\IAuthorizationService;
+use Base3\Authorization\Dto\AuthorizationRequest;
 use Base3\LinkTarget\Api\ILinkTargetService;
 use Base3\Usermanager\Api\IUsermanager;
+use Base3\Usermanager\Permission;
 use DatabaseWorkbench\Api\IDatabaseWorkbenchCsrf;
+use DatabaseWorkbench\Feature\DatabaseWorkbenchFeature;
 use Throwable;
 
 final class DatabaseWorkbenchDisplay implements IDisplay {
@@ -19,7 +23,8 @@ final class DatabaseWorkbenchDisplay implements IDisplay {
 		private readonly IAssetResolver $assetResolver,
 		private readonly ILinkTargetService $linkTargetService,
 		private readonly IDatabaseWorkbenchCsrf $csrf,
-		private readonly IUsermanager $userManager
+		private readonly IUsermanager $userManager,
+		private readonly IAuthorizationService $authorization
 	) {}
 
 	public static function getName(): string {
@@ -37,23 +42,27 @@ final class DatabaseWorkbenchDisplay implements IDisplay {
 		$translations = is_array($translations) ? $translations : [];
 
 		if (!$this->isAuthenticated()) {
-			$message = trim((string)($translations['authentication_required'] ?? ''));
-			$message = $message !== '' ? $message : 'DatabaseWorkbench requires an authenticated user.';
-			return '<div class="databaseworkbench-error">'
-				. htmlspecialchars($message, ENT_QUOTES, 'UTF-8')
-				. '</div>';
+			return $this->renderError((string)($translations['authentication_required'] ?? ''));
+		}
+
+		$authorized = false;
+		try {
+			$authorized = $this->authorization->decide(new AuthorizationRequest(
+				$this->authorization->getDefaultAuthority(),
+				Permission::for('feature', DatabaseWorkbenchFeature::getName())
+			))->isAllowed();
+		} catch (Throwable) {
+			// Do not render the workbench if feature authorization is unavailable.
+		}
+		if (!$authorized) {
+			return $this->renderError((string)($translations['access_denied'] ?? ''));
 		}
 
 		try {
 			$token = $this->csrf->issueToken();
 		}
 		catch (Throwable) {
-			$message = trim((string)($translations['session_required'] ?? ''));
-			$message = $message !== '' ? $message : 'DatabaseWorkbench requires an active session.';
-
-			return '<div class="databaseworkbench-error">'
-				. htmlspecialchars($message, ENT_QUOTES, 'UTF-8')
-				. '</div>';
+			return $this->renderError((string)($translations['session_required'] ?? ''));
 		}
 
 		$title = trim((string)($translations['title'] ?? ''));
@@ -74,6 +83,12 @@ final class DatabaseWorkbenchDisplay implements IDisplay {
 		$this->view->assign('resolve', fn(string $path): string => $this->assetResolver->resolve($path));
 
 		return $this->view->loadTemplate();
+	}
+
+	private function renderError(string $message): string {
+		return '<div class="databaseworkbench-error">'
+			. htmlspecialchars($message, ENT_QUOTES, 'UTF-8')
+			. '</div>';
 	}
 
 	private function isAuthenticated(): bool {

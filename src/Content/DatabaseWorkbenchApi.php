@@ -4,9 +4,14 @@ namespace DatabaseWorkbench\Content;
 
 use Base3\Api\IOutput;
 use Base3\Api\IRequest;
+use Base3\Authorization\Api\IAuthorizationService;
+use Base3\Authorization\Dto\AuthorizationRequest;
+use Base3\Translation\Api\ITranslation;
 use Base3\Usermanager\Api\IUsermanager;
+use Base3\Usermanager\Permission;
 use DatabaseWorkbench\Api\IDatabaseWorkbenchCsrf;
 use DatabaseWorkbench\Api\IDatabaseWorkbenchService;
+use DatabaseWorkbench\Feature\DatabaseWorkbenchFeature;
 use Throwable;
 
 final class DatabaseWorkbenchApi implements IOutput {
@@ -15,7 +20,9 @@ final class DatabaseWorkbenchApi implements IOutput {
 		private readonly IRequest $request,
 		private readonly IDatabaseWorkbenchService $service,
 		private readonly IDatabaseWorkbenchCsrf $csrf,
-		private readonly IUsermanager $userManager
+		private readonly IUsermanager $userManager,
+		private readonly IAuthorizationService $authorization,
+		private readonly ITranslation $translation
 	) {}
 
 	public static function getName(): string {
@@ -25,7 +32,19 @@ final class DatabaseWorkbenchApi implements IOutput {
 	public function getOutput(string $out = 'json', bool $final = false): string {
 		try {
 			if (!$this->isAuthenticated()) {
-				throw new \RuntimeException('DatabaseWorkbench requires an authenticated user.');
+				return $this->deny('authentication_required');
+			}
+			$authorized = false;
+			try {
+				$authorized = $this->authorization->decide(new AuthorizationRequest(
+					$this->authorization->getDefaultAuthority(),
+					Permission::for('feature', DatabaseWorkbenchFeature::getName())
+				))->isAllowed();
+			} catch (Throwable) {
+				// An unavailable authorization authority must not expose the database.
+			}
+			if (!$authorized) {
+				return $this->deny('access_denied');
 			}
 			$payload = $this->request->getJsonBody();
 			if ($payload === []) {
@@ -46,6 +65,14 @@ final class DatabaseWorkbenchApi implements IOutput {
 				'error' => $e->getMessage(),
 			]);
 		}
+	}
+
+	private function deny(string $key): string {
+		if (!headers_sent()) http_response_code(403);
+		return $this->json([
+			'ok' => false,
+			'error' => $this->translation->translate('Display', 'databaseworkbench_display', $key),
+		]);
 	}
 
 	private function isAuthenticated(): bool {

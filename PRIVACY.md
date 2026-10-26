@@ -151,20 +151,15 @@ DatabaseWorkbench does not define session cookies, session storage, session life
 
 ## 7. Authentication and authorization
 
-The display and API require a current BASE3 user from `IUsermanager::getUser()` with a nonempty, nonzero technical ID. There is no role check or permission check.
+Both `databaseworkbenchdisplay` and `databaseworkbenchapi` require a current BASE3 user from `IUsermanager::getUser()` with a nonempty, nonzero technical ID, followed by an explicit positive decision from `IAuthorizationService` for `feature/databaseworkbenchfeature`.
 
-This is a critical deployment property. Any user who passes the minimal identity check and the CSRF boundary can request all supported operations. CSRF protection prevents a different class of attack and is not authorization.
+`DatabaseWorkbenchFeature` is discovered through `IClassMap` and has an empty default audience. No users, roles or groups receive access by default. The host may explicitly assign an audience through its BASE3 feature administration. That assignment is stored and evaluated by the configured host authorization system, not by a new DatabaseWorkbench permission store. In the supplied ILIAS integration, the feature configuration is managed by Base3Ilias using `ISettingsStore` and evaluated using the shared user criterion engine.
 
-The surrounding application or infrastructure must restrict access to trusted database administrators or another explicitly authorized group.
+A denied, indeterminate or unavailable decision prevents the workbench UI from rendering and prevents the API from dispatching requests to the database service. Unauthorized API requests return HTTP 403 with a localized error. The check takes place before CSRF verification and database operations. The Base3IliasLab settings entry is also filtered by this decision, separately from the host's existing administration navigation restrictions.
 
-The authorization boundary should protect both:
+Feature permission controls access to the **whole** workbench, including reads, writes, arbitrary SQL and exports, not individual tables or individual SQL actions. The effective database account privileges remain unchanged. This permission does not independently authorize an ILIAS native operation.
 
-```text
-databaseworkbenchdisplay
-databaseworkbenchapi
-```
-
-Protecting only the visible display is insufficient because the API endpoint performs the database operations.
+CSRF protection remains required for authorized calls and does not substitute for authorization. The deployment remains responsible for restricting grants to trusted administrators and assessing its session, logging, auditing and database privileges.
 
 ## 8. Database privileges
 
@@ -333,7 +328,7 @@ These services must be assessed and documented by the installation using them.
 
 A production installation should, at minimum:
 
-- protect both display and API endpoint with explicit authorization
+- verify that `feature/databaseworkbenchfeature` is granted only to intended administrators; its default audience is empty
 - permit access only to trusted administrators
 - use a least-privilege database account
 - avoid exposing the endpoint directly to the public internet unless the surrounding security model explicitly requires it
@@ -352,7 +347,7 @@ For a concrete deployment, document at least the following:
 | Topic | Installation-specific information |
 |---|---|
 | Authorized users | Who may access DatabaseWorkbench |
-| Authorization boundary | How `databaseworkbenchdisplay` and `databaseworkbenchapi` are protected |
+| Authorization boundary | The effective feature audience for `feature/databaseworkbenchfeature`, who can manage that audience, and the host's authorization provider |
 | Database | Which database or schema is exposed |
 | Database host | Local, internal, managed, or externally hosted |
 | Database account | Account used and granted privileges |
@@ -371,4 +366,4 @@ For a concrete deployment, document at least the following:
 
 DatabaseWorkbench is intentionally a powerful database administration component. It does not create a separate personal-data store, but it can expose and modify any data reachable through the configured database account. Its privacy and security properties therefore depend heavily on the surrounding authorization boundary, the database privileges, the sensitivity of the connected data, infrastructure logging, session security, and the handling of downloaded exports.
 
-The component's built-in CSRF protection, pagination, response limits, and export limit reduce specific technical risks. They do not replace authorization, least privilege, audit requirements, or a deployment-specific data protection assessment.
+The component's feature authorization, CSRF protection, pagination, response limits, and export limit reduce specific technical risks. They do not replace least privilege, audit requirements, or a deployment-specific data protection assessment.
