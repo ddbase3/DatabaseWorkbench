@@ -86,7 +86,7 @@ final class DatabaseWorkbenchDisplay implements IDisplay {
 	}
 
 	private function renderError(string $message): string {
-		return '<div class="databaseworkbench-error">'
+		return '<div class="databaseworkbench-error" role="alert">'
 			. htmlspecialchars($message, ENT_QUOTES, 'UTF-8')
 			. '</div>';
 	}
