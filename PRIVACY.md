@@ -367,3 +367,10 @@ For a concrete deployment, document at least the following:
 DatabaseWorkbench is intentionally a powerful database administration component. It does not create a separate personal-data store, but it can expose and modify any data reachable through the configured database account. Its privacy and security properties therefore depend heavily on the surrounding authorization boundary, the database privileges, the sensitivity of the connected data, infrastructure logging, session security, and the handling of downloaded exports.
 
 The component's feature authorization, CSRF protection, pagination, response limits, and export limit reduce specific technical risks. They do not replace least privilege, audit requirements, or a deployment-specific data protection assessment.
+
+## Settings tab metadata
+
+The discoverable DatabaseWorkbench settings entry reuses the existing
+DatabaseWorkbenchFeature rather than storing a parallel permission. The
+existing workbench display's server-side access and CSRF checks remain the
+authority. Tab metadata and translations add no storage or query access.

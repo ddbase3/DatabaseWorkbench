@@ -83,3 +83,12 @@ The export function is capped at 5000 rows to keep an embedded AJAX display boun
 
 - [Frequently Asked Questions](docs/faq.md)
 - [Privacy and data processing](PRIVACY.md)
+
+## Discoverable Settings entry
+
+`DatabaseworkbenchSettingsTab` contributes the SQL workbench to the BASE3
+settings group. It reuses the existing `DatabaseWorkbenchFeature` and its
+authorization decision instead of defining a second permission for the same
+operation. Names and descriptions are owned by
+`DatabaseWorkbench/lang/Settings/`; the display's own server-side permission
+and CSRF checks remain authoritative.
