@@ -79,6 +79,31 @@ Row updates and deletes require a primary key. Tables without a primary key rema
 
 The export function is capped at 5000 rows to keep an embedded AJAX display bounded. Large production exports should use a dedicated backup or export workflow.
 
+## Unit tests
+
+The plugin keeps its unit tests in `test/`, parallel to `src/`. They exercise the
+plugin registration, database service (including SQL construction, metadata,
+mutation errors, row limits and exports), API dispatch and authentication,
+feature authorization, session CSRF, settings visibility, display configuration,
+template output, discoverable feature metadata and exception contracts. The
+`WorkbenchFakeDatabase` fixture implements the existing `IDatabase` contract
+without opening a production database connection.
+
+Run the tests from a BASE3 project root with its usual class autoloader and
+PHPUnit bootstrap enabled. Select the installed PHPUnit executable for each
+version, for example:
+
+```bash
+php phpunit-11.5.phar --coverage-filter plugin/DatabaseWorkbench/src --coverage-text plugin/DatabaseWorkbench/test
+php phpunit-12.5.phar --coverage-filter plugin/DatabaseWorkbench/src --coverage-text plugin/DatabaseWorkbench/test
+```
+
+Both PHPUnit versions require the relevant PHP XML and mbstring extensions.
+For code coverage, enable PCOV or Xdebug. Use the resulting per-class and
+per-file report to verify line and class coverage; merely executing the tests
+without an enabled coverage driver does not establish a percentage. The tests
+use PHPUnit APIs shared by 11.5 and 12.5 and do not need a live database.
+
 ## Documentation
 
 - [Frequently Asked Questions](docs/faq.md)

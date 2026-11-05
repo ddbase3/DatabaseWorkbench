@@ -5,8 +5,10 @@ namespace DatabaseWorkbench\Test\Feature;
 use Base3\Authorization\Api\IFeature;
 use Base3\Translation\Api\ITranslation;
 use DatabaseWorkbench\Feature\DatabaseWorkbenchFeature;
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 
+#[CoversClass(DatabaseWorkbenchFeature::class)]
 final class DatabaseWorkbenchFeatureTest extends TestCase {
 
 	public function testDeclaresOneUnassignedWorkbenchPermission(): void {
