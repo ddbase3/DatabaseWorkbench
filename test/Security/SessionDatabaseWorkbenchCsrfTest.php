@@ -74,7 +74,7 @@ final class SessionDatabaseWorkbenchCsrfTest extends TestCase {
 			['token' => str_repeat('b', 64), 'expected' => str_repeat('a', 64), 'valid' => false],
 			['token' => str_repeat('a', 64), 'expected' => null, 'valid' => false],
 		] as $case) {
-			$session = $this->createMock(ISession::class);
+			$session = $this->createStub(ISession::class);
 			$session->method('started')->willReturn(true);
 			$session->method('get')->willReturn($case['expected']);
 			self::assertSame($case['valid'], (new SessionDatabaseWorkbenchCsrf($session))->isValid($case['token']));
@@ -82,14 +82,14 @@ final class SessionDatabaseWorkbenchCsrfTest extends TestCase {
 	}
 
 	public function testAssertValidAcceptsCurrentSessionToken(): void {
-		$session = $this->createMock(ISession::class);
+		$session = $this->createStub(ISession::class);
 		$session->method('started')->willReturn(true);
 		$session->method('get')->willReturn('known-secret');
 		self::assertNull((new SessionDatabaseWorkbenchCsrf($session))->assertValid('known-secret'));
 	}
 
 	public function testAssertValidRejectsInvalidTokenWithDomainException(): void {
-		$session = $this->createMock(ISession::class);
+		$session = $this->createStub(ISession::class);
 		$session->method('started')->willReturn(true);
 		$session->method('get')->willReturn('expected');
 		$this->expectException(DatabaseWorkbenchCsrfException::class);

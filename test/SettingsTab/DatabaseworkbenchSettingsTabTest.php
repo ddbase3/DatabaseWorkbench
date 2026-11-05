@@ -46,7 +46,7 @@ final class DatabaseworkbenchSettingsTabTest extends TestCase {
 	}
 
 	public function testTabDoesNotSilentlyAllowAuthorizationExceptions(): void {
-		$authorization = $this->createMock(IAuthorizationService::class);
+		$authorization = $this->createStub(IAuthorizationService::class);
 		$authorization->method('getDefaultAuthority')->willReturn('host');
 		$authorization->method('decide')->willThrowException(new RuntimeException('authorization unavailable'));
 		$tab = new DatabaseworkbenchSettingsTab($this->createStub(ITranslation::class), $authorization);
@@ -55,7 +55,7 @@ final class DatabaseworkbenchSettingsTabTest extends TestCase {
 	}
 
 	private function authorization(AuthorizationDecision $decision): IAuthorizationService {
-		$authorization = $this->createMock(IAuthorizationService::class);
+		$authorization = $this->createStub(IAuthorizationService::class);
 		$authorization->method('getDefaultAuthority')->willReturn('host');
 		$authorization->method('decide')->willReturnCallback(static function(AuthorizationRequest $request) use ($decision): AuthorizationDecision {
 			self::assertSame('host', $request->authority);

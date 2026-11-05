@@ -37,7 +37,7 @@ final class DatabaseWorkbenchDisplayTest extends TestCase {
 		$view->expects(self::never())->method('loadTemplate');
 		$csrf = $this->createMock(IDatabaseWorkbenchCsrf::class);
 		$csrf->expects(self::never())->method('issueToken');
-		$authorization = $this->createMock(IAuthorizationService::class);
+		$authorization = $this->createStub(IAuthorizationService::class);
 		$authorization->method('getDefaultAuthority')->willReturn('ilias');
 		$authorization->method('decide')->willThrowException(new RuntimeException('authority offline'));
 		$display = $this->createDisplay(AuthorizationDecision::allow(), $view, $csrf, $authorization);
@@ -57,7 +57,7 @@ final class DatabaseWorkbenchDisplayTest extends TestCase {
 
 	public function testAnonymousAndInvalidUserIdsFailBeforeAuthorizationOrCsrf(): void {
 		foreach ([null, 0, -1, '', ' ', '0', ' 0 ', 1.5, []] as $id) {
-			$usermanager = $this->createMock(IUsermanager::class);
+			$usermanager = $this->createStub(IUsermanager::class);
 			$usermanager->method('getUser')->willReturn($id === null ? null : User::fromArray(['id' => $id]));
 			$view = $this->createView();
 			$view->expects(self::never())->method('loadTemplate');
@@ -72,10 +72,10 @@ final class DatabaseWorkbenchDisplayTest extends TestCase {
 
 	public function testAuthenticatedStringIdentifiersAreAccepted(): void {
 		foreach (['8', ' 8 ', '00'] as $id) {
-			$usermanager = $this->createMock(IUsermanager::class);
+			$usermanager = $this->createStub(IUsermanager::class);
 			$usermanager->method('getUser')->willReturn(User::fromArray(['id' => $id]));
 			$view = $this->createView();
-			$view->method('loadTemplate')->willReturn('allowed');
+			$view->expects(self::once())->method('loadTemplate')->willReturn('allowed');
 			$csrf = $this->createMock(IDatabaseWorkbenchCsrf::class);
 			$csrf->expects(self::once())->method('issueToken')->willReturn('csrf');
 			$display = $this->createDisplay(AuthorizationDecision::allow(), $view, $csrf, null, $usermanager);
@@ -87,7 +87,7 @@ final class DatabaseWorkbenchDisplayTest extends TestCase {
 		$view = $this->createMock(IMvcView::class);
 		$view->method('getBricks')->willReturn(['session_required' => 'Session <expired>']);
 		$view->expects(self::never())->method('loadTemplate');
-		$csrf = $this->createMock(IDatabaseWorkbenchCsrf::class);
+		$csrf = $this->createStub(IDatabaseWorkbenchCsrf::class);
 		$csrf->method('issueToken')->willThrowException(new RuntimeException('internal session error'));
 		$display = $this->createDisplay(AuthorizationDecision::allow(), $view, $csrf);
 		self::assertSame(
@@ -101,7 +101,7 @@ final class DatabaseWorkbenchDisplayTest extends TestCase {
 		$view->method('getBricks')->willReturn(null);
 		$view->expects(self::never())->method('loadTemplate');
 		$display = $this->createDisplay(
-			AuthorizationDecision::deny(), $view, $this->createMock(IDatabaseWorkbenchCsrf::class)
+			AuthorizationDecision::deny(), $view, $this->createStub(IDatabaseWorkbenchCsrf::class)
 		);
 		self::assertSame('<div class="databaseworkbench-error" role="alert"></div>', $display->getOutput());
 	}
@@ -119,7 +119,7 @@ final class DatabaseWorkbenchDisplayTest extends TestCase {
 			}
 		);
 		$view->expects(self::once())->method('loadTemplate')->willReturn('rendered custom workbench');
-		$csrf = $this->createMock(IDatabaseWorkbenchCsrf::class);
+		$csrf = $this->createStub(IDatabaseWorkbenchCsrf::class);
 		$csrf->method('issueToken')->willReturn('known-token');
 		$links = $this->createMock(ILinkTargetService::class);
 		$links->expects(self::once())->method('getLink')->with([
@@ -141,14 +141,14 @@ final class DatabaseWorkbenchDisplayTest extends TestCase {
 	}
 
 	public function testDataResetAndPageSizeMinimumUseExistingViewDefaults(): void {
-		$view = $this->createMock(IMvcView::class);
+		$view = $this->createStub(IMvcView::class);
 		$view->method('getBricks')->willReturn(['title' => '   ']);
 		$assigned = [];
 		$view->method('assign')->willReturnCallback(static function(string $key, mixed $value) use (&$assigned): void {
 			$assigned[$key] = $value;
 		});
 		$view->method('loadTemplate')->willReturn('done');
-		$csrf = $this->createMock(IDatabaseWorkbenchCsrf::class);
+		$csrf = $this->createStub(IDatabaseWorkbenchCsrf::class);
 		$csrf->method('issueToken')->willReturn('ok');
 		$display = $this->createDisplay(AuthorizationDecision::allow(), $view, $csrf);
 		$display->setData(['title' => 'removed', 'page_size' => -11]);
@@ -168,8 +168,8 @@ final class DatabaseWorkbenchDisplayTest extends TestCase {
 		$view->method('assign')->willReturnCallback(static function(string $key, mixed $value) use (&$assigned): void {
 			$assigned[$key] = $value;
 		});
-		$view->method('loadTemplate')->willReturn('ok');
-		$csrf = $this->createMock(IDatabaseWorkbenchCsrf::class);
+		$view->expects(self::once())->method('loadTemplate')->willReturn('ok');
+		$csrf = $this->createStub(IDatabaseWorkbenchCsrf::class);
 		$csrf->method('issueToken')->willReturn('ok');
 		$display = $this->createDisplay(AuthorizationDecision::allow(), $view, $csrf);
 		$display->setData(['page_size' => '32']);
@@ -197,7 +197,7 @@ final class DatabaseWorkbenchDisplayTest extends TestCase {
 		?ILinkTargetService $links = null
 	): DatabaseWorkbenchDisplay {
 		if ($authorization === null) {
-			$authorization = $this->createMock(IAuthorizationService::class);
+			$authorization = $this->createStub(IAuthorizationService::class);
 			$authorization->method('getDefaultAuthority')->willReturn('ilias');
 			$authorization->method('decide')->willReturnCallback(static function(AuthorizationRequest $request) use ($decision): AuthorizationDecision {
 				self::assertSame('ilias', $request->authority);
@@ -207,16 +207,16 @@ final class DatabaseWorkbenchDisplayTest extends TestCase {
 			});
 		}
 		if ($usermanager === null) {
-			$usermanager = $this->createMock(IUsermanager::class);
+			$usermanager = $this->createStub(IUsermanager::class);
 			$usermanager->method('getUser')->willReturn(User::fromArray(['id' => 7]));
 		}
 		if ($links === null) {
-			$links = $this->createMock(ILinkTargetService::class);
+			$links = $this->createStub(ILinkTargetService::class);
 			$links->method('getLink')->willReturn('index.php?name=databaseworkbenchapi');
 		}
 		return new DatabaseWorkbenchDisplay(
 			$view,
-			$assets ?? $this->createMock(IAssetResolver::class),
+			$assets ?? $this->createStub(IAssetResolver::class),
 			$links,
 			$csrf,
 			$usermanager,

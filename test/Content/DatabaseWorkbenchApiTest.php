@@ -46,17 +46,17 @@ final class DatabaseWorkbenchApiTest extends TestCase {
 		$request->expects(self::never())->method('getJsonBody');
 		$csrf = $this->createMock(IDatabaseWorkbenchCsrf::class);
 		$csrf->expects(self::never())->method('assertValid');
-		$authorization = $this->createMock(IAuthorizationService::class);
+		$authorization = $this->createStub(IAuthorizationService::class);
 		$authorization->method('getDefaultAuthority')->willReturn('ilias');
 		$authorization->method('decide')->willThrowException(new RuntimeException('internal details'));
 
-		$api = $this->createApi(AuthorizationDecision::allow(), $request, $this->createMock(IDatabaseWorkbenchService::class), $csrf, $authorization);
+		$api = $this->createApi(AuthorizationDecision::allow(), $request, $this->createStub(IDatabaseWorkbenchService::class), $csrf, $authorization);
 		self::assertSame(['ok' => false, 'error' => 'access_denied'], json_decode($api->getOutput(), true));
 		self::assertSame(403, http_response_code());
 	}
 
 	public function testAllowedRequestPassesCsrfValidationAndCallsItsAction(): void {
-		$request = $this->createMock(IRequest::class);
+		$request = $this->createStub(IRequest::class);
 		$request->method('getJsonBody')->willReturn(['csrf' => 'valid', 'action' => 'tables']);
 		$service = $this->createMock(IDatabaseWorkbenchService::class);
 		$service->expects(self::once())->method('getTables')->willReturn(['audit']);
@@ -68,7 +68,7 @@ final class DatabaseWorkbenchApiTest extends TestCase {
 	}
 
 	public function testAnonymousUserCannotCallApi(): void {
-		$usermanager = $this->createMock(IUsermanager::class);
+		$usermanager = $this->createStub(IUsermanager::class);
 		$usermanager->method('getUser')->willReturn(null);
 		$authorization = $this->createMock(IAuthorizationService::class);
 		$authorization->expects(self::never())->method('decide');
@@ -76,7 +76,7 @@ final class DatabaseWorkbenchApiTest extends TestCase {
 		$request->expects(self::never())->method('getJsonBody');
 		$csrf = $this->createMock(IDatabaseWorkbenchCsrf::class);
 		$csrf->expects(self::never())->method('assertValid');
-		$api = $this->createApi(AuthorizationDecision::allow(), $request, $this->createMock(IDatabaseWorkbenchService::class), $csrf, $authorization, $usermanager);
+		$api = $this->createApi(AuthorizationDecision::allow(), $request, $this->createStub(IDatabaseWorkbenchService::class), $csrf, $authorization, $usermanager);
 
 		self::assertSame(['ok' => false, 'error' => 'authentication_required'], json_decode($api->getOutput(), true));
 		self::assertSame(403, http_response_code());
@@ -139,7 +139,7 @@ final class DatabaseWorkbenchApiTest extends TestCase {
 	}
 
 	public function testInvalidArrayValuesAreConvertedToEmptyArrays(): void {
-		$request = $this->createMock(IRequest::class);
+		$request = $this->createStub(IRequest::class);
 		$request->method('getJsonBody')->willReturn([
 			'csrf' => 'ok', 'action' => 'update', 'table' => 'people',
 			'key' => 'not an array', 'values' => 23, 'null_columns' => 'not an array',
@@ -153,7 +153,7 @@ final class DatabaseWorkbenchApiTest extends TestCase {
 
 	public function testUnsupportedOrMissingActionIsRejectedWithoutDatabaseAccess(): void {
 		foreach (['no-such-action', '  '] as $action) {
-			$request = $this->createMock(IRequest::class);
+			$request = $this->createStub(IRequest::class);
 			$request->method('getJsonBody')->willReturn(['csrf' => 'ok', 'action' => $action]);
 			$service = $this->createMock(IDatabaseWorkbenchService::class);
 			$service->expects(self::never())->method('getOverview');
@@ -167,7 +167,7 @@ final class DatabaseWorkbenchApiTest extends TestCase {
 	}
 
 	public function testCsrfFailureIsReturnedAsAnErrorWithoutCallingDatabase(): void {
-		$request = $this->createMock(IRequest::class);
+		$request = $this->createStub(IRequest::class);
 		$request->method('getJsonBody')->willReturn(['action' => 'tables']);
 		$service = $this->createMock(IDatabaseWorkbenchService::class);
 		$service->expects(self::never())->method('getTables');
@@ -178,9 +178,9 @@ final class DatabaseWorkbenchApiTest extends TestCase {
 	}
 
 	public function testServiceExceptionsProduceErrorsRatherThanSuccessResponses(): void {
-		$request = $this->createMock(IRequest::class);
+		$request = $this->createStub(IRequest::class);
 		$request->method('getJsonBody')->willReturn(['csrf' => 'ok', 'action' => 'tables']);
-		$service = $this->createMock(IDatabaseWorkbenchService::class);
+		$service = $this->createStub(IDatabaseWorkbenchService::class);
 		$service->method('getTables')->willThrowException(new RuntimeException('database unavailable'));
 		$api = $this->createApi(AuthorizationDecision::allow(), $request, $service, $this->createStub(IDatabaseWorkbenchCsrf::class));
 		self::assertSame(['ok' => false, 'error' => 'database unavailable'], json_decode($api->getOutput(), true));
@@ -188,7 +188,7 @@ final class DatabaseWorkbenchApiTest extends TestCase {
 
 	public function testAllInvalidUserIdentifiersDenyBeforeAuthorization(): void {
 		foreach ([0, -7, null, '', ' ', '0', ' 0 ', 1.5, ['id']] as $id) {
-			$usermanager = $this->createMock(IUsermanager::class);
+			$usermanager = $this->createStub(IUsermanager::class);
 			$usermanager->method('getUser')->willReturn(User::fromArray(['id' => $id]));
 			$authorization = $this->createMock(IAuthorizationService::class);
 			$authorization->expects(self::never())->method('decide');
@@ -197,7 +197,7 @@ final class DatabaseWorkbenchApiTest extends TestCase {
 			$csrf = $this->createMock(IDatabaseWorkbenchCsrf::class);
 			$csrf->expects(self::never())->method('assertValid');
 			$api = $this->createApi(
-				AuthorizationDecision::allow(), $request, $this->createMock(IDatabaseWorkbenchService::class),
+				AuthorizationDecision::allow(), $request, $this->createStub(IDatabaseWorkbenchService::class),
 				$csrf, $authorization, $usermanager
 			);
 			self::assertSame(['ok' => false, 'error' => 'authentication_required'], json_decode($api->getOutput(), true));
@@ -206,11 +206,11 @@ final class DatabaseWorkbenchApiTest extends TestCase {
 
 	public function testPositiveIntegerAndNonzeroStringIdsCanAccessAuthorizedService(): void {
 		foreach ([1, ' 7 ', '00'] as $id) {
-			$usermanager = $this->createMock(IUsermanager::class);
+			$usermanager = $this->createStub(IUsermanager::class);
 			$usermanager->method('getUser')->willReturn(User::fromArray(['id' => $id]));
-			$request = $this->createMock(IRequest::class);
+			$request = $this->createStub(IRequest::class);
 			$request->method('getJsonBody')->willReturn(['csrf' => 'ok', 'action' => 'tables']);
-			$service = $this->createMock(IDatabaseWorkbenchService::class);
+			$service = $this->createStub(IDatabaseWorkbenchService::class);
 			$service->method('getTables')->willReturn([]);
 			$api = $this->createApi(
 				AuthorizationDecision::allow(), $request, $service, $this->createStub(IDatabaseWorkbenchCsrf::class),
@@ -221,20 +221,20 @@ final class DatabaseWorkbenchApiTest extends TestCase {
 	}
 
 	public function testJsonEncoderSubstitutesInvalidUtf8InSuccessfulData(): void {
-		$request = $this->createMock(IRequest::class);
+		$request = $this->createStub(IRequest::class);
 		$request->method('getJsonBody')->willReturn(['csrf' => 'ok', 'action' => 'overview']);
-		$service = $this->createMock(IDatabaseWorkbenchService::class);
+		$service = $this->createStub(IDatabaseWorkbenchService::class);
 		$service->method('getOverview')->willReturn(['name' => "\xFF"]);
 		$api = $this->createApi(AuthorizationDecision::allow(), $request, $service, $this->createStub(IDatabaseWorkbenchCsrf::class));
 		self::assertSame(['ok' => true, 'data' => ['name' => "\u{FFFD}"]], json_decode($api->getOutput(), true));
 	}
 
 	public function testJsonEncoderReturnsErrorForRecursiveServiceResult(): void {
-		$request = $this->createMock(IRequest::class);
+		$request = $this->createStub(IRequest::class);
 		$request->method('getJsonBody')->willReturn(['csrf' => 'ok', 'action' => 'overview']);
 		$recursive = [];
 		$recursive['self'] = &$recursive;
-		$service = $this->createMock(IDatabaseWorkbenchService::class);
+		$service = $this->createStub(IDatabaseWorkbenchService::class);
 		$service->method('getOverview')->willReturnCallback(static fn(): array => $recursive);
 		$api = $this->createApi(AuthorizationDecision::allow(), $request, $service, $this->createStub(IDatabaseWorkbenchCsrf::class));
 		self::assertSame(['ok' => false, 'error' => 'Unable to encode response.'], json_decode($api->getOutput(), true));
@@ -249,11 +249,11 @@ final class DatabaseWorkbenchApiTest extends TestCase {
 		?IUsermanager $usermanager = null
 	): DatabaseWorkbenchApi {
 		if ($usermanager === null) {
-			$usermanager = $this->createMock(IUsermanager::class);
+			$usermanager = $this->createStub(IUsermanager::class);
 			$usermanager->method('getUser')->willReturn(User::fromArray(['id' => 7]));
 		}
 		if ($authorization === null) {
-			$authorization = $this->createMock(IAuthorizationService::class);
+			$authorization = $this->createStub(IAuthorizationService::class);
 			$authorization->method('getDefaultAuthority')->willReturn('ilias');
 			$authorization->method('decide')->willReturnCallback(static function(AuthorizationRequest $request) use ($decision): AuthorizationDecision {
 				self::assertSame('ilias', $request->authority);
@@ -262,7 +262,7 @@ final class DatabaseWorkbenchApiTest extends TestCase {
 				return $decision;
 			});
 		}
-		$translation = $this->createMock(ITranslation::class);
+		$translation = $this->createStub(ITranslation::class);
 		$translation->method('translate')->willReturnCallback(static function(string $set, string $section, string $key): string {
 			self::assertSame('Display', $set);
 			self::assertSame('databaseworkbench_display', $section);
