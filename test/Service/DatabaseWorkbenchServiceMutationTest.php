@@ -1,10 +1,25 @@
 <?php declare(strict_types=1);
 
-namespace DatabaseWorkbench\Test\Service;
+/***********************************************************************
+ * This file is part of DatabaseWorkbench for BASE3 Framework.
+ *
+ * DatabaseWorkbench provides embedded MySQL and MariaDB administration.
+ * It supports browsing, schema inspection, row changes and SQL queries.
+ * Server-side operations use a dedicated authorized JSON endpoint.
+ *
+ * Developed by Daniel Dahme
+ * Licensed under GPL-3.0
+ * https://www.gnu.org/licenses/gpl-3.0.en.html
+ *
+ * https://base3.de
+ * https://github.com/ddbase3/DatabaseWorkbench
+ **********************************************************************/
 
-use DatabaseWorkbench\Exception\DatabaseWorkbenchException;
-use DatabaseWorkbench\Service\DatabaseWorkbenchService;
-use DatabaseWorkbench\Test\Support\WorkbenchFakeDatabase;
+namespace Base3\DatabaseWorkbench\Test\Service;
+
+use Base3\DatabaseWorkbench\Exception\DatabaseWorkbenchException;
+use Base3\DatabaseWorkbench\Service\DatabaseWorkbenchService;
+use Base3\DatabaseWorkbench\Test\Support\WorkbenchFakeDatabase;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 

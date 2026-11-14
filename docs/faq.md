@@ -26,7 +26,7 @@ The plugin also registers `IDatabaseWorkbenchService` and provides a replaceable
 
 The implementation is written for MySQL and MariaDB semantics. It uses statements such as `SHOW TABLE STATUS`, `SHOW FULL COLUMNS`, `SHOW INDEX`, `SHOW CREATE TABLE`, `SELECT VERSION()`, and MySQL style identifier quoting.
 
-The active database connection is supplied through `Base3\Database\Api\IDatabase`.
+The active database connection is supplied through `Base3\CoreFoundation\Database\Api\IDatabase`.
 
 ## Does DatabaseWorkbench create its own database tables?
 

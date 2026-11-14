@@ -1,17 +1,32 @@
 <?php declare(strict_types=1);
 
-namespace DatabaseWorkbench\Display;
+/***********************************************************************
+ * This file is part of DatabaseWorkbench for BASE3 Framework.
+ *
+ * DatabaseWorkbench provides embedded MySQL and MariaDB administration.
+ * It supports browsing, schema inspection, row changes and SQL queries.
+ * Server-side operations use a dedicated authorized JSON endpoint.
+ *
+ * Developed by Daniel Dahme
+ * Licensed under GPL-3.0
+ * https://www.gnu.org/licenses/gpl-3.0.en.html
+ *
+ * https://base3.de
+ * https://github.com/ddbase3/DatabaseWorkbench
+ **********************************************************************/
 
-use Base3\Api\IAssetResolver;
-use Base3\Api\IDisplay;
-use Base3\Api\IMvcView;
-use Base3\Authorization\Api\IAuthorizationService;
-use Base3\Authorization\Dto\AuthorizationRequest;
-use Base3\LinkTarget\Api\ILinkTargetService;
-use Base3\Usermanager\Api\IUsermanager;
-use Base3\Usermanager\Permission;
-use DatabaseWorkbench\Api\IDatabaseWorkbenchCsrf;
-use DatabaseWorkbench\Feature\DatabaseWorkbenchFeature;
+namespace Base3\DatabaseWorkbench\Display;
+
+use Base3\CoreFoundation\Api\IAssetResolver;
+use Base3\CoreFoundation\Api\IDisplay;
+use Base3\CoreFoundation\Api\IMvcView;
+use Base3\CoreFoundation\Authorization\Api\IAuthorizationService;
+use Base3\CoreFoundation\Authorization\Dto\AuthorizationRequest;
+use Base3\CoreFoundation\LinkTarget\Api\ILinkTargetService;
+use Base3\CoreFoundation\Usermanager\Api\IUsermanager;
+use Base3\CoreFoundation\Usermanager\Permission;
+use Base3\DatabaseWorkbench\Api\IDatabaseWorkbenchCsrf;
+use Base3\DatabaseWorkbench\Feature\DatabaseWorkbenchFeature;
 use Throwable;
 
 final class DatabaseWorkbenchDisplay implements IDisplay {

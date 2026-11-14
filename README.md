@@ -28,17 +28,17 @@ databaseworkbenchapi
 
 ## Requirements
 
-- a configured `Base3\Database\Api\IDatabase` implementation for MySQL or MariaDB
-- an available `Base3\Session\Api\ISession` implementation
+- a configured `Base3\CoreFoundation\Database\Api\IDatabase` implementation for MySQL or MariaDB
+- an available `Base3\CoreFoundation\Session\Api\ISession` implementation
 - a current BASE3 user returned by `IUsermanager::getUser()` with a nonempty technical ID
-- an active `Base3\Authorization\Api\IAuthorizationService`
-- an active `Base3\Translation\Api\ITranslation` for localized feature information and API errors
-- an active `Base3\LinkTarget\Api\ILinkTargetService`
-- an active `Base3\Api\IAssetResolver`
+- an active `Base3\CoreFoundation\Authorization\Api\IAuthorizationService`
+- an active `Base3\CoreFoundation\Translation\Api\ITranslation` for localized feature information and API errors
+- an active `Base3\CoreFoundation\LinkTarget\Api\ILinkTargetService`
+- an active `Base3\CoreFoundation\Api\IAssetResolver`
 
 The plugin registers a replaceable default for:
 
-- `DatabaseWorkbench\Api\IDatabaseWorkbenchCsrf`
+- `Base3\DatabaseWorkbench\Api\IDatabaseWorkbenchCsrf`
 
 A project plugin may deliberately replace this service if the host system has its own session or CSRF boundary.
 
@@ -69,7 +69,7 @@ $display->setData([
 
 Both `databaseworkbenchdisplay` and `databaseworkbenchapi` require a current user from `IUsermanager::getUser()` with a nonempty, nonzero technical ID **and** an explicit `ALLOW` decision from the current `IAuthorizationService` for `feature/databaseworkbenchfeature`. A denied, indeterminate or unavailable authorization decision blocks the workbench. The API rejects unauthorized requests with HTTP 403 before CSRF validation or any database operation.
 
-`DatabaseWorkbench\Feature\DatabaseWorkbenchFeature` is discovered via `IClassMap` and declares an empty default audience. **No user, role or BASE3 group receives access by default.** Grant access explicitly through the host's BASE3 feature administration before using the workbench. In the Base3IliasLab settings navigation, the `databaseworkbenchdisplay` entry is shown only after an allowed feature decision and remains subject to the host's existing administration navigation restrictions.
+`Base3\DatabaseWorkbench\Feature\DatabaseWorkbenchFeature` is discovered via `IClassMap` and declares an empty default audience. **No user, role or BASE3 group receives access by default.** Grant access explicitly through the host's BASE3 feature administration before using the workbench. In the Base3IliasLab settings navigation, the `databaseworkbenchdisplay` entry is shown only after an allowed feature decision and remains subject to the host's existing administration navigation restrictions.
 
 Feature authorization and CSRF protection are separate safeguards. The authorization decision does not change the privileges of the configured database account.
 

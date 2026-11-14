@@ -1,18 +1,33 @@
 <?php declare(strict_types=1);
 
-namespace DatabaseWorkbench\Test\Content;
+/***********************************************************************
+ * This file is part of DatabaseWorkbench for BASE3 Framework.
+ *
+ * DatabaseWorkbench provides embedded MySQL and MariaDB administration.
+ * It supports browsing, schema inspection, row changes and SQL queries.
+ * Server-side operations use a dedicated authorized JSON endpoint.
+ *
+ * Developed by Daniel Dahme
+ * Licensed under GPL-3.0
+ * https://www.gnu.org/licenses/gpl-3.0.en.html
+ *
+ * https://base3.de
+ * https://github.com/ddbase3/DatabaseWorkbench
+ **********************************************************************/
 
-use Base3\Api\IRequest;
-use Base3\Authorization\Api\IAuthorizationService;
-use Base3\Authorization\Dto\AuthorizationDecision;
-use Base3\Authorization\Dto\AuthorizationRequest;
-use Base3\Translation\Api\ITranslation;
-use Base3\Usermanager\Api\IUsermanager;
-use Base3\Usermanager\User;
-use DatabaseWorkbench\Api\IDatabaseWorkbenchCsrf;
-use DatabaseWorkbench\Api\IDatabaseWorkbenchService;
-use DatabaseWorkbench\Content\DatabaseWorkbenchApi;
-use DatabaseWorkbench\Feature\DatabaseWorkbenchFeature;
+namespace Base3\DatabaseWorkbench\Test\Content;
+
+use Base3\CoreFoundation\Api\IRequest;
+use Base3\CoreFoundation\Authorization\Api\IAuthorizationService;
+use Base3\CoreFoundation\Authorization\Dto\AuthorizationDecision;
+use Base3\CoreFoundation\Authorization\Dto\AuthorizationRequest;
+use Base3\CoreFoundation\Translation\Api\ITranslation;
+use Base3\CoreFoundation\Usermanager\Api\IUsermanager;
+use Base3\CoreFoundation\Usermanager\User;
+use Base3\DatabaseWorkbench\Api\IDatabaseWorkbenchCsrf;
+use Base3\DatabaseWorkbench\Api\IDatabaseWorkbenchService;
+use Base3\DatabaseWorkbench\Content\DatabaseWorkbenchApi;
+use Base3\DatabaseWorkbench\Feature\DatabaseWorkbenchFeature;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
