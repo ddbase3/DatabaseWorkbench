@@ -83,6 +83,12 @@ Statements beginning with `SELECT`, `SHOW`, `DESCRIBE`, `DESC`, `EXPLAIN`, and s
 
 DatabaseWorkbench does not implement a separate allowlist of writable SQL commands. The effective capability is determined by the privileges of the configured database account and by what the active `IDatabase` implementation accepts.
 
+## How does the SQL console report errors?
+
+DatabaseWorkbench forwards SQL to the configured `IDatabase` implementation. For failed SQL, the workbench displays the database error number and original server message when available, rather than hiding them behind a generic error. Errors thrown directly by the configured database implementation are displayed as reported by the JSON endpoint.
+
+For example, a duplicate key error may be displayed as `Database error 1062: Duplicate entry ...`. The exact code and message depend on the server and backend. Error details can contain table names, index names, and submitted values, so only trusted administrators should have access to the workbench. Error messages are shown as text, not interpreted as HTML.
+
 ## How many rows can the SQL console return?
 
 The component returns at most 500 rows through the SQL console response. If a larger result is returned by the database abstraction, the response is truncated to the first 500 rows and marked as truncated.
@@ -130,11 +136,11 @@ This normalization concerns display and JSON responses. The SQL export is genera
 
 ## Does DatabaseWorkbench have its own authentication or authorization system?
 
-No.
+DatabaseWorkbench does not introduce a separate authentication or permission system.
 
-The display and JSON endpoint require a current BASE3 user from `IUsermanager::getUser()` with a nonempty, nonzero technical ID. The current component intentionally has no role or permission check. Every user passing this minimal identity check can use the database operations made available by the plugin, subject to the privileges of the configured database account.
+The display and JSON endpoint require a current BASE3 user from `IUsermanager::getUser()` with a nonempty, nonzero technical ID and an explicit `ALLOW` decision from `IAuthorizationService` for `feature/databaseworkbenchfeature`. The default audience is empty. Denied, indeterminate and unavailable authorization results block database access. The active database account separately determines which SQL operations can succeed.
 
-Additional authorization must be enforced by the surrounding application, route protection, reverse proxy, network boundary, or another appropriate access control layer.
+Feature access must be granted only to trusted administrators through the existing host authorization system. Route and network protections may provide additional safeguards, but cannot replace the endpoint's authorization decision.
 
 ## Is CSRF protection the same as authorization?
 

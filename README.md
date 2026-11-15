@@ -22,6 +22,7 @@ databaseworkbenchapi
 - insert, edit, and delete for tables with primary keys
 - column, index, and CREATE TABLE inspection
 - SQL console for read and write statements
+- SQL error details (server error number and message when available) displayed to authorized users
 - table truncate and drop actions
 - SQL export with structure and up to 5000 rows
 - CSRF protection through the BASE3 `ISession` contract
@@ -44,7 +45,7 @@ A project plugin may deliberately replace this service if the host system has it
 
 ## Installation
 
-Extract the patch in the parent directory containing both the `DatabaseWorkbench` and `Base3IliasLab` modules (normally the BASE3 plugins directory):
+Extract the patch from the BASE3 project root containing `plugin/DatabaseWorkbench/`:
 
 ```bash
 unzip -o DatabaseWorkbench-patch.zip
@@ -103,6 +104,12 @@ For code coverage, enable PCOV or Xdebug. Use the resulting per-class and
 per-file report to verify line and class coverage; merely executing the tests
 without an enabled coverage driver does not establish a percentage. The tests
 use PHPUnit APIs shared by 11.5 and 12.5 and do not need a live database.
+
+The browser error display regression tests use the built-in Node.js test runner:
+
+```bash
+node --test plugin/DatabaseWorkbench/test/Assets/DatabaseWorkbenchClientTest.js
+```
 
 ## Documentation
 

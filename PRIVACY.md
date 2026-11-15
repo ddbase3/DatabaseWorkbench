@@ -269,7 +269,7 @@ Their configuration, retention, and access permissions are outside this componen
 
 The JSON endpoint catches errors and returns the exception message in the JSON response.
 
-When the database reports an error, the service creates an exception message containing the database error number and database error text. The supplied browser interface translates database errors to a generic localized message for normal display, but an authorized client can inspect the raw JSON response.
+When the database reports an error through `IDatabase`, the service creates an exception message containing the database error number and database error text. The browser now shows the localized error heading together with the original number and message to authorized DatabaseWorkbench users. Directly thrown backend errors are displayed using the message from the existing JSON response. These messages are inserted as text, not as HTML.
 
 Database error messages can reveal schema details, object names, constraints, or other technical information. This is another reason to keep the endpoint within a trusted administrative boundary.
 

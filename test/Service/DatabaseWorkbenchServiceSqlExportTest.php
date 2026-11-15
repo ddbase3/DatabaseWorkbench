@@ -64,6 +64,32 @@ final class DatabaseWorkbenchServiceSqlExportTest extends TestCase {
 		}
 	}
 
+	public function testInsertSelectFromJoinedTableExecutesAsMutation(): void {
+		$sql = "INSERT INTO base3system_systag (entry_id, tag)\n"
+			. "SELECT f.id, 'dancephotography_photo_checklogo'\n"
+			. "FROM base3system_entryfile f\n"
+			. "INNER JOIN base3system_systag t ON f.id = t.entry_id\n"
+			. "WHERE t.tag = 'dancephotographyphoto';";
+		$db = new WorkbenchFakeDatabase();
+		$db->affected = 12;
+		$result = (new DatabaseWorkbenchService($db))->executeSql($sql);
+
+		self::assertSame(['type' => 'mutation', 'affected_rows' => 12, 'insert_id' => 0], $result);
+		self::assertSame([['non', $sql]], $db->queries);
+	}
+
+	public function testInsertSelectReportsOriginalDatabaseError(): void {
+		$sql = "INSERT INTO base3system_systag (entry_id, tag) SELECT id, 'new' FROM source_tags";
+		$db = new WorkbenchFakeDatabase();
+		$db->error = true;
+		$db->errorCode = 1062;
+		$db->errorText = "Duplicate entry '3-new' for key 'PRIMARY'";
+
+		$this->expectException(DatabaseWorkbenchException::class);
+		$this->expectExceptionMessage("Database error 1062: Duplicate entry '3-new' for key 'PRIMARY'");
+		(new DatabaseWorkbenchService($db))->executeSql($sql);
+	}
+
 	public function testSqlRejectsEmptyStatementsBeforeQueryExecution(): void {
 		$db = new WorkbenchFakeDatabase();
 		$this->expectException(DatabaseWorkbenchException::class);

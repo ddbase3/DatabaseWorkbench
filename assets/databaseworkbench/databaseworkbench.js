@@ -24,9 +24,11 @@
 		if (raw.indexOf('Unknown table: ') === 0) return translate(config, 'error_unknown_table', 'Unknown table: {table}', {table: raw.substring(15)});
 		if (raw.indexOf('Missing primary key value: ') === 0) return translate(config, 'error_primary_key_value', 'Missing primary key value: {column}', {column: raw.substring(27)});
 		if (raw.indexOf('Unknown DatabaseWorkbench action: ') === 0) return translate(config, 'error_unknown_action', 'Unknown DatabaseWorkbench action.');
-		if (raw.indexOf('Database error ') === 0) return translate(config, 'error_database', 'The database operation failed.');
+		var databaseError = raw.match(/^Database error (\d+): ([\s\S]*)$/);
+		if (databaseError) return translate(config, 'error_database', raw, {code: databaseError[1], message: databaseError[2]});
 
-		return translate(config, 'request_failed', 'DatabaseWorkbench request failed.');
+		if (raw === '' || raw === 'DatabaseWorkbench request failed.') return translate(config, 'request_failed', 'DatabaseWorkbench request failed.');
+		return raw;
 	}
 
 	function element(tag, className, text) {
@@ -86,6 +88,7 @@
 		var header = element('div', 'databaseworkbench-header');
 		var title = element('div', 'databaseworkbench-title', this.root.dataset.title || translate(this.config, 'title', 'Database Workbench'));
 		var status = element('div', 'databaseworkbench-status', translate(this.config, 'ready', 'Ready'));
+		status.setAttribute('role', 'status');
 		this.status = status;
 		header.append(title, status);
 
