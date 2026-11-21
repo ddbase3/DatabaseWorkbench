@@ -2,7 +2,7 @@
 	"manifestVersion": 1,
 	"name": "DatabaseWorkbench",
 	"namespace": "Base3\\DatabaseWorkbench",
-	"version": "1.0.1",
+	"version": "5.0.0",
 	"description": "Embeddable MySQL/MariaDB administration display for BASE3.",
 	"license": "GPL-3.0-or-later",
 	"maintainers": [
@@ -14,7 +14,7 @@
 	],
 	"repository": "https://github.com/ddbase3/DatabaseWorkbench",
 	"dependencies": {
-		"CoreFoundation": ">=4.10.0",
-		"UiFoundation": ">=4.3.0"
+		"CoreFoundation": ">=5.0.0",
+		"UiFoundation": ">=5.0.0"
 	}
 }
